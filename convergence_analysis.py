@@ -4,22 +4,17 @@ import cv2
 from scipy.linalg import inv
 from scipy.interpolate import RectBivariateSpline
 
-# --- 1. Класи з вашого коду (Snake Step 2) ---
-
 class ExternalForce:
     def __init__(self, image, sigma=5.0):
         self.H, self.W = image.shape
         blurred = cv2.GaussianBlur(image, (0, 0), sigma)
         
-        # Градієнти (Sobel)
         gx = cv2.Sobel(blurred, cv2.CV_64F, 1, 0, ksize=5)
         gy = cv2.Sobel(blurred, cv2.CV_64F, 0, 1, ksize=5)
         magnitude = np.sqrt(gx**2 + gy**2)
         
-        # Потенціал P = -magnitude
         self.potential = -magnitude 
 
-        # Нормалізація для градієнта сил
         magnitude_norm = (magnitude - magnitude.min()) / (magnitude.max() - magnitude.min() + 1e-8)
         
         self.fx = cv2.Sobel(magnitude_norm, cv2.CV_64F, 1, 0, ksize=3)
@@ -93,10 +88,9 @@ class Snake:
         E_ext = self.w_line * external_force_field.get_potential(self.points) 
         return E_int + E_ext
 
-# --- 2. Генерація даних ---
 def create_synthetic_image():
     img = np.zeros((200, 200), dtype=np.uint8)
-    cv2.circle(img, (100, 100), 40, 255, -1) # Об'єкт
+    cv2.circle(img, (100, 100), 40, 255, -1) 
     return img
 
 def create_optimal_snake():
@@ -105,35 +99,27 @@ def create_optimal_snake():
     y = 100 + 80 * np.sin(s)
     return np.column_stack([x, y])
 
-# --- 3. Основний код для генерації графіка (Step 5.1) ---
 if __name__ == "__main__":
-    # Налаштування
     img = create_synthetic_image()
     ext_force = ExternalForce(img, sigma=3.0)
     
-    # Ініціалізація
     init_points = create_optimal_snake()
     snake = Snake(init_points, alpha=0.5, beta=1.0, gamma=1.0, w_line=5.0)
     
-    # Збір даних
     steps = 300
     energy_history = []
     
     print("Запуск симуляції для аналізу енергії...")
     for t in range(steps):
-        # 1. Записуємо поточну енергію
         current_energy = snake.get_total_energy(ext_force)
         energy_history.append(current_energy)
         
-        # 2. Робимо крок
         snake.step(ext_force)
         
-    # --- 4. Побудова графіка ---
     plt.figure(figsize=(10, 6))
     
     plt.plot(energy_history, color='blue', linewidth=2, label=r'$E_{total}(t)$')
     
-    # Додамо лінію тренду або асимптоту (останнє значення)
     final_energy = energy_history[-1]
     plt.axhline(y=final_energy, color='red', linestyle='--', alpha=0.7, label=f'Min Energy: {final_energy:.1f}')
     
@@ -143,7 +129,6 @@ if __name__ == "__main__":
     plt.grid(True, linestyle=':', alpha=0.6)
     plt.legend(fontsize=12)
     
-    # Текстова вставка на графіку
     plt.text(steps * 0.5, (energy_history[0] + final_energy)/2, 
              "Monotonic Decay $\\rightarrow$ Stability", 
              fontsize=12, color='green', fontweight='bold', 
